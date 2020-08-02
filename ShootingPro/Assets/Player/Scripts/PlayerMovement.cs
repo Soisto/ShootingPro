@@ -12,25 +12,24 @@ public class PlayerMovement : BaseMonoBehaviour
         KeyInputManager.Instance.BindAxis("MoveSide", MoveSide);
     }
 
-    public void MoveFront(float fScale, float fDeltaTime)
+    public void MoveFront(float fScale)
     {
         moveVector.y += fScale;
-        Debug.Log("MoveFront Callback");
     }
 
-    public void MoveSide(float fScale, float fDeltaTime)
+    public void MoveSide(float fScale)
     {
         moveVector.x += fScale;
-        Debug.Log("MoveFront Callback");
     }
 
     public override void Tick() 
     {
+       
     }
 
     public override void FixedTick()
     {
-        transform.position += moveVector;
+        transform.position += moveVector * Time.fixedDeltaTime;
         moveVector = Vector3.zero;
     }
 }

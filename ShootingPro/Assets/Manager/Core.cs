@@ -14,18 +14,17 @@ public class Core : MonoBehaviour
     {
         get
         {
-            if (instance == null)
-            {
-                instance = new Core();
-            }
             return instance;
         }
     }
 
+    
     public void AddObject(BaseMonoBehaviour _GameObject)
     {
         if (null != _GameObject)
+        {
             GameObjects.Add(_GameObject);
+        }
     }
 
     public void DeleteObject(BaseMonoBehaviour _GameObject)
@@ -38,7 +37,8 @@ public class Core : MonoBehaviour
             GameObjects[i].PrimaryNumber += 1;
         }
 
-        //GameObjects.Remove(_GameObject);
+        // 이벤트 매니저에서 삭제관련된 이벤트를 만들어야 할듯
+        //GameObjects.Remove(_GameObject);  
     }
 
     //public Object CreateObject(Object origin)
@@ -57,16 +57,22 @@ public class Core : MonoBehaviour
 
     private void Awake()
     {
-        // KeyInputManager.Instance.AddAxisKey("","")
+        if(instance == null)
+            instance = this;
+
         KeyInputManager.Instance.Init();
         KeyInputManager.Instance.AddAxisKey("MoveFront", 'w', 1f, 0);
         KeyInputManager.Instance.AddAxisKey("MoveFront", 's', -1f, 0);
         KeyInputManager.Instance.AddAxisKey("MoveSide", 'd', 1f, 0);
         KeyInputManager.Instance.AddAxisKey("MoveSide", 'a', -1f, 0);
 
+        KeyInputManager.Instance.AddActionKey("Shooting", 'p', 0);
+
+
+
         GameObjects.AddRange(FindObjectsOfType<BaseMonoBehaviour>());
 
-        for(int i = 0; i < GameObjects.Count; ++i)
+        for (int i = 0; i < GameObjects.Count; ++i)
         {
             GameObjects[i].Initialize();
         }
@@ -83,9 +89,9 @@ public class Core : MonoBehaviour
 
     void Start()
     {
-        for(int i = 0; i < GameObjects.Count;++i)
+        for (int i = 0; i < GameObjects.Count; ++i)
         {
-            if(GameObjects[i].gameObject.activeSelf)
+            if (GameObjects[i].gameObject.activeSelf)
                 GameObjects[i].BeginPlay();
         }
     }
@@ -96,7 +102,7 @@ public class Core : MonoBehaviour
 
         for (int i = 0; i < GameObjects.Count; ++i)
         {
-                GameObjects[i].Tick();
+            GameObjects[i].Tick();
         }
     }
 

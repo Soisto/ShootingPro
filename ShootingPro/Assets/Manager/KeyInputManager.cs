@@ -2,106 +2,117 @@
 using System.Collections.Generic;
 using UnityEngine;
 
+public enum INPUT_EVENT : int
+{
+    IE_PRESSED,
+    IE_UP,
+    IE_DOUBLE,
+    IE_HOLD
+}
+
+public enum SKey : int
+{
+    SKEY_CTRL,
+    SKEY_ALT,
+    SKEY_SHIFT,
+    SKEY_END
+}
+
+public enum SKey_Type : int
+{
+    ST_CTRL = 0x1,
+    ST_ALT = 0x2,
+    ST_SHIFT = 0x4
+}
+
+public struct KeyInfo
+{
+    public char cKey;
+
+    public bool[] bSKey;
+
+    public bool bDown;
+    public bool bHold;
+    public bool bUp;
+}
+
+public struct AxisInfo
+{
+    public KeyInfo tKeyInfo;
+    public float fScale;
+}
+
+public struct BindAxisInfo
+{
+    public string strName;
+    public List<AxisInfo> keyList;
+    public List<AxisFunc> funcList;
+}
+
+public struct BindActionInfo
+{
+    public string strName;
+    public List<KeyInfo> keyList;
+    public Dictionary<INPUT_EVENT, List<ActionFunc>> funcDic;
+}
+
+public struct InputKey
+{
+    public KeyCode eKey;
+    public char cKey;
+    public bool bDown;
+    public bool bHold;
+    public bool bUp;
+
+    public bool bEnable;
+
+    public InputKey(KeyCode _eKey, char _cKey, bool _bDown, bool _bHold, bool _bUp, bool _bEnable)
+    {
+        eKey = _eKey;
+        cKey = _cKey;
+        bDown = _bDown;
+        bHold = _bHold;
+        bUp = _bUp;
+
+        bEnable = _bEnable;
+    }
+}
+
+
+
+public delegate void ActionFunc();
+public delegate void AxisFunc(float fScale);
+
 public class KeyInputManager : Singleton<KeyInputManager>
 {
-    //private KeyInputManager() { }
+    
 
-    //public enum KeyState
+
+    //public struct BindingKey
     //{
-    //    KS_None,    // 키를 누르지 않을 때
-    //    KS_Down,    // 키를 눌렀을 때
-    //    KS_Hold,    // 키를 누르는 중일때
-    //    KS_Up       // 키를 입력이 끝났을 때
+    //    public KeyCode m_eKey;
+    //    //public KeyState m_eKeyState;
+    //    public ActionFunc ActionKeyDown;
+    //    public ActionFunc ActionKeyHold;
+    //    public ActionFunc ActionKeyUp;
+
+    //    public bool bDown;
+    //    public bool bHold;
+    //    public bool bUp;
+
+    //    public bool bEnable;
     //}
 
-    enum INPUT_EVENT
-    {
-        IE_PRESS,
-        IE_UP,
-        IE_DOUBLE,
-        IE_HOLD
-    };
+    
 
-    public enum SKey : int
-    {
-        SKEY_CTRL,
-        SKEY_ALT,
-        SKEY_SHIFT,
-        SKEY_END
-    }
+    //public struct ActionInfo
+    //{
+    //    public KeyInfo tKeyInfo;
+    //    public INPUT_EVENT eInputEvent;
+    //}
 
-    public enum SKey_Type : int
-    {
-        ST_CTRL = 0x1,
-        ST_ALT = 0x2,
-        ST_SHIFT = 0x4
-    }
+    
 
-    public struct InputKey
-    {
-        public KeyCode eKey;
-        public char cKey;
-        public bool bDown;
-        public bool bHold;
-        public bool bUp;
-
-        public bool bEnable;
-
-        public InputKey(KeyCode _eKey, char _cKey, bool _bDown, bool _bHold, bool _bUp, bool _bEnable)
-        {
-            eKey = _eKey;
-            cKey = _cKey;
-            bDown = _bDown;
-            bHold = _bHold;
-            bUp = _bUp;
-
-            bEnable = _bEnable;
-        }
-    }
-
-    public delegate void ActionFunc();
-    public delegate void AxisFunc(float fScale);
-
-    public struct BindingKey
-    {
-        public KeyCode m_eKey;
-        //public KeyState m_eKeyState;
-        public ActionFunc ActionKeyDown;
-        public ActionFunc ActionKeyHold;
-        public ActionFunc ActionKeyUp;
-
-        public bool bDown;
-        public bool bHold;
-        public bool bUp;
-
-        public bool bEnable;
-    }
-
-    public struct KeyInfo
-    {
-        public char cKey;
-
-        public bool[] bSKey;
-
-        public bool bDown;
-        public bool bHold;
-        public bool bUp;
-    }
-
-    public struct AxisInfo
-    {
-        public KeyInfo tKeyInfo;
-        public float fScale;
-    }
-
-    public delegate void AxisFunction(float fScale, float fTime);
-
-    public struct BindAxisInfo
-    {
-        public string strName;
-        public List<AxisInfo> keyList;
-        public List<AxisFunction> funcList;
-    }
 
     public void AddAxisKey(string strName, char cKey, float fScale, int iSKey)
     {
@@ -113,8 +124,8 @@ public class KeyInputManager : Singleton<KeyInputManager>
             BindAxisInfo AxisInfo;
             AxisInfo.strName = strName;
             AxisInfo.keyList = new List<AxisInfo>();
-            AxisInfo.funcList = new List<AxisFunction>();
-
+            AxisInfo.funcList = new List<AxisFunc>();
+           
             Info = AxisInfo;
             m_AxisInfoList.Add(AxisInfo);
         }
@@ -124,7 +135,7 @@ public class KeyInputManager : Singleton<KeyInputManager>
         // 동일한 키가 있는지 검사
         while (iter.MoveNext())
         {
-            if(iter.Current.tKeyInfo.cKey == cKey)
+            if (iter.Current.tKeyInfo.cKey == cKey)
             {
                 return;
             }
@@ -143,26 +154,22 @@ public class KeyInputManager : Singleton<KeyInputManager>
         tInfo.tKeyInfo.bSKey = new bool[(int)SKey.SKEY_END];
 
         if ((iSKey & (int)SKey_Type.ST_CTRL) > 0)
-            tInfo.tKeyInfo.bSKey[(int)SKey_Type.ST_CTRL] = true;
+            tInfo.tKeyInfo.bSKey[(int)SKey.SKEY_CTRL] = true;
 
         if ((iSKey & (int)SKey_Type.ST_ALT) > 0)
-            tInfo.tKeyInfo.bSKey[(int)SKey_Type.ST_ALT] = true;
+            tInfo.tKeyInfo.bSKey[(int)SKey.SKEY_ALT] = true;
 
         if ((iSKey & (int)SKey_Type.ST_SHIFT) > 0)
-            tInfo.tKeyInfo.bSKey[(int)SKey_Type.ST_SHIFT] = true;
+            tInfo.tKeyInfo.bSKey[(int)SKey.SKEY_SHIFT] = true;
 
         Info.Value.keyList.Add(tInfo);
 
         InputKey temp = m_KeyList[cKey];
-
         temp.bEnable = true;
-
         m_KeyList[cKey] = temp;
     }
 
-    // 수정 필요
-    //
-    public void BindAxis(string strName, AxisFunction func)
+    public void BindAxis(string strName, AxisFunc func)
     {
         BindAxisInfo? Info = FindAxis(strName);
 
@@ -177,7 +184,7 @@ public class KeyInputManager : Singleton<KeyInputManager>
         Info = temp;
     }
 
-    public BindAxisInfo? FindAxis(string strName)
+    private BindAxisInfo? FindAxis(string strName)
     {
         for (int i = 0; i < m_AxisInfoList.Count; ++i)
         {
@@ -189,9 +196,92 @@ public class KeyInputManager : Singleton<KeyInputManager>
     }
 
 
+    public void AddActionKey(string strName, char cKey, int iSKey)
+    {
+        BindActionInfo? bindActionInfo = FindAction(strName);
+
+        if(null == bindActionInfo)
+        {
+            BindActionInfo newBindActionInfo;
+
+            newBindActionInfo.strName = strName;
+            newBindActionInfo.keyList = new List<KeyInfo>();
+            newBindActionInfo.funcDic = new Dictionary<INPUT_EVENT, List<ActionFunc>>();
+
+            for(int i =0; i < 4; ++i)
+            {
+                newBindActionInfo.funcDic.Add((INPUT_EVENT)i, new List<ActionFunc>());
+            }
+
+            bindActionInfo = newBindActionInfo;
+            m_ActoinInfoList.Add(newBindActionInfo);
+        }
+
+        IEnumerator<KeyInfo> iter = bindActionInfo.Value.keyList.GetEnumerator();
+
+        while(iter.MoveNext())
+        {
+            if (iter.Current.cKey == cKey)
+                return;
+        }
+
+        KeyInfo newActionInfo;
+
+        newActionInfo.bDown = false;
+        newActionInfo.bHold = false;
+        newActionInfo.bUp = false;
+        
+        newActionInfo.cKey = cKey;
+
+        newActionInfo.bSKey = new bool[(int)SKey.SKEY_END];
+
+        if ((iSKey & (int)SKey_Type.ST_CTRL) > 0)
+            newActionInfo.bSKey[(int)SKey.SKEY_CTRL] = true;
+
+        if ((iSKey & (int)SKey_Type.ST_ALT) > 0)
+            newActionInfo.bSKey[(int)SKey.SKEY_ALT] = true;
+
+        if ((iSKey & (int)SKey_Type.ST_SHIFT) > 0)
+            newActionInfo.bSKey[(int)SKey.SKEY_SHIFT] = true;
+
+
+        bindActionInfo.Value.keyList.Add(newActionInfo);
+
+        InputKey tempInputKey = m_KeyList[cKey];
+        tempInputKey.bEnable = true;
+        m_KeyList[cKey] = tempInputKey;
+    }
+
+    public void BindAction(string strName, INPUT_EVENT eInputEvent, ActionFunc func)
+    {
+        BindActionInfo? bindActionInfo = FindAction(strName);
+
+        if (null == bindActionInfo)
+            return;
+
+        BindActionInfo tempActionInfo = bindActionInfo.Value;
+
+        Debug.Log(eInputEvent);
+
+        tempActionInfo.funcDic[eInputEvent].Add(func);    
+        bindActionInfo = tempActionInfo;
+    }
+
+    private BindActionInfo? FindAction(string strName)
+    {
+        for(int i = 0; i < m_ActoinInfoList.Count; ++i)
+        {
+            if (m_ActoinInfoList[i].strName.Equals(strName))
+                return m_ActoinInfoList[i];
+        }
+
+        return null;
+    }
+
     // 멤버변수 목록
     private List<InputKey> m_KeyList;
     private List<BindAxisInfo> m_AxisInfoList;
+    private List<BindActionInfo> m_ActoinInfoList;
 
     private InputKey[] m_SKeyArr;
 
@@ -202,6 +292,7 @@ public class KeyInputManager : Singleton<KeyInputManager>
     {
         m_KeyList = new List<InputKey>();
         m_AxisInfoList = new List<BindAxisInfo>();
+        m_ActoinInfoList = new List<BindActionInfo>();
         m_SKeyArr = new InputKey[(int)SKey.SKEY_END];
 
         m_SKeyArr[(int)SKey.SKEY_CTRL].cKey = (char)KeyCode.LeftControl;
@@ -212,8 +303,6 @@ public class KeyInputManager : Singleton<KeyInputManager>
 
         m_SKeyArr[(int)SKey.SKEY_ALT].cKey = (char)KeyCode.LeftAlt;
         m_SKeyArr[(int)SKey.SKEY_ALT].eKey = KeyCode.LeftAlt;
-
-
 
         InputKey key;
 
@@ -232,10 +321,12 @@ public class KeyInputManager : Singleton<KeyInputManager>
 
     }
 
+    // SKeyArr 업데이트 구현 필요
     public void Logic()
     {
         InputUpdate();
         AxisInputUpdate();
+        ActionInputUpdate();
     }
 
     public void InputUpdate()
@@ -248,13 +339,13 @@ public class KeyInputManager : Singleton<KeyInputManager>
             if (Input.GetKey((m_KeyList[i].eKey)))
             {
                 InputKey temp = m_KeyList[i];
-                
-                if(!temp.bDown && !temp.bHold)
+
+                if (!temp.bDown && !temp.bHold)
                 {
                     temp.bDown = true;
                     temp.bHold = true;
                 }
-                else if(temp.bDown)
+                else if (temp.bDown)
                 {
                     temp.bDown = false;
                 }
@@ -271,7 +362,7 @@ public class KeyInputManager : Singleton<KeyInputManager>
                     temp.bHold = false;
                     temp.bUp = true;
                 }
-                else if(temp.bUp)
+                else if (temp.bUp)
                 {
                     temp.bUp = false;
                 }
@@ -323,7 +414,7 @@ public class KeyInputManager : Singleton<KeyInputManager>
                     }
                 }
 
-                IEnumerator<AxisFunction> iterFunc = iter.Current.funcList.GetEnumerator();
+                IEnumerator<AxisFunc> iterFunc = iter.Current.funcList.GetEnumerator();
 
                 if (bSKey && tempAxisInfo.tKeyInfo.bDown)
                 {
@@ -335,7 +426,7 @@ public class KeyInputManager : Singleton<KeyInputManager>
                     m_cPrevKey = tempAxisInfo.tKeyInfo.cKey;
                     while (iterFunc.MoveNext())
                     {
-                        iterFunc.Current(iterKey.Current.fScale, Time.deltaTime);
+                        iterFunc.Current(iterKey.Current.fScale);
                     }
                 }
 
@@ -345,6 +436,84 @@ public class KeyInputManager : Singleton<KeyInputManager>
 
             }
 
+        }
+
+    }
+
+    public void ActionInputUpdate()
+    {
+        IEnumerator <BindActionInfo> iter = m_ActoinInfoList.GetEnumerator();
+
+        while(iter.MoveNext())
+        {
+            IEnumerator <KeyInfo> iterKey = iter.Current.keyList.GetEnumerator();
+
+            KeyInfo tempActionInfo;
+
+            while(iterKey.MoveNext())
+            {
+                tempActionInfo = iterKey.Current;
+
+                tempActionInfo.bDown = m_KeyList[iterKey.Current.cKey].bDown;
+                tempActionInfo.bHold = m_KeyList[iterKey.Current.cKey].bHold;
+                tempActionInfo.bUp = m_KeyList[iterKey.Current.cKey].bUp;
+
+                bool bSKey = true;
+
+
+                // 이 코드 좀더 스마트하게 짤 수 있지 않을까  bool 변수하나 사용해서
+                // break가 아니라 return 이여도 괜찮지 않을까?
+                for (int i = 0; i < (int)SKey.SKEY_END; ++i)
+                {
+                    if (tempActionInfo.bSKey[i])
+                    {
+                        if (!m_SKeyArr[i].bDown)
+                        {
+                            bSKey = false;
+                            break;
+                        }
+                    }
+                    else
+                    {
+                        if(m_SKeyArr[i].bDown)
+                        {
+                            bSKey = false;
+                            break;
+                        }
+                    }
+                }
+
+                Dictionary<INPUT_EVENT, List<ActionFunc>> iterFunc = iter.Current.funcDic;
+
+                if (bSKey && tempActionInfo.bDown)
+                {
+                    IEnumerator<ActionFunc> funcList = iterFunc[INPUT_EVENT.IE_PRESSED].GetEnumerator();
+
+                    while (funcList.MoveNext())
+                    {
+                        funcList.Current();
+                    }
+                }
+
+                if (bSKey && tempActionInfo.bDown)
+                {
+                    IEnumerator<ActionFunc> funcList = iterFunc[INPUT_EVENT.IE_HOLD].GetEnumerator();
+
+                    while (funcList.MoveNext())
+                        funcList.Current();
+                }
+
+                if (bSKey && tempActionInfo.bDown)
+                {
+                    IEnumerator<ActionFunc> funcList = iterFunc[INPUT_EVENT.IE_UP].GetEnumerator();
+
+                    while (funcList.MoveNext())
+                        funcList.Current();
+                }
+
+
+
+            }
         }
 
     }

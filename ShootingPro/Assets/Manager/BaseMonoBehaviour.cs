@@ -40,8 +40,8 @@ public class BaseMonoBehaviour : MonoBehaviour
 
     public static Object CreateObject(Object origin)
     {
-        BaseMonoBehaviour temp = Instantiate(origin) as BaseMonoBehaviour;
-        Core.Instance.AddObject(temp);
+        GameObject temp = Instantiate(origin) as GameObject;
+        Core.Instance.AddObject(temp.GetComponent<BaseMonoBehaviour>());
         return temp;
     }
 
